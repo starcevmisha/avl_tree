@@ -1,155 +1,138 @@
 #include <iostream>
 
-class node
+template <typename T>
+class AvlTree
 {
-  public:
-    int key;
-    unsigned char height;
-    node *left;
-    node *right;
 
-    node(int key)
+    T key;
+    int height;
+    AvlTree *left;
+    AvlTree *right;
+
+    static int get_height(AvlTree *p)
+    {
+        if (p != nullptr)
+        {
+            return p->height;
+        }
+        return 0;
+    }
+
+    int bfactor(AvlTree *p)
+    {
+        return get_height(p->right) - get_height(p->left);
+    }
+
+    void recount_height()
+    {
+        auto height_l = get_height(left);
+        auto height_r = get_height(right);
+        height = (height_l > height_r ? height_l : height_r) + 1;
+    }
+
+    AvlTree *small_right_rotate(AvlTree *p)
+    {
+        AvlTree *q = p->left;
+        p->left = q->right;
+        q->right = p;
+        p->recount_height();
+        q->recount_height();
+        return q;
+    }
+
+    AvlTree *small_left_rotate(AvlTree *q)
+    {
+        AvlTree *p = q->right;
+        q->right = p->left;
+        p->left = q;
+        p->recount_height();
+        q->recount_height();
+        return p;
+    }
+
+    AvlTree *balance()
+    {
+        recount_height();
+        if (bfactor(this) == 2) //big left rotate
+        {
+            if (bfactor(right) > 0)
+                right = small_right_rotate(right);
+            return small_left_rotate(this);
+        }
+
+        if (bfactor(this) == -2) // big right rotate
+        {
+            if (bfactor(left) > 0)
+                left = small_left_rotate(left);
+            return small_right_rotate(this);
+        }
+        return this;
+    }
+
+    AvlTree *findmin() //minimal key in subtree
+    {
+        return left ? left->findmin() : this;
+    }
+
+    AvlTree *removemin()
+    {
+        if (left == nullptr)
+            return right;
+        left = left->removemin();
+        this->balance();
+    }
+
+  public:
+    AvlTree(T key)
     {
         this->key = key;
         height = 1;
         left = nullptr;
         right = nullptr;
     }
+
+    AvlTree *remove(T key)
+    {
+        if (this == nullptr)
+            return nullptr;
+        if (key < this->key)
+            left =left->remove(key);
+        else if (key > this->key)
+            right = right->remove(key);
+        else
+        {
+            AvlTree *min_in_right = right->findmin();
+            min_in_right->right = right->removemin();
+            min_in_right->left = left;
+            
+            delete this;
+            return min_in_right->balance();
+        }
+    }
+    AvlTree *insert(T key)
+    {
+        if (this == nullptr)
+            return new AvlTree(key);
+        if (key >= this->key)
+            right = right->insert(key);
+        else
+            left = left->insert(key);
+        return this->balance();
+    }
 };
-
-unsigned char height(node *p)
-{
-    if (p != nullptr)
-    {
-        return p->height;
-    }
-    return 0;
-}
-
-int bfactor(node *p)
-{
-    return height(p->right) - height(p->left);
-}
-
-void recount_height(node *p)
-{
-    auto height_l = height(p->left);
-    auto height_r = height(p->right);
-    p->height = (height_l > height_r ? height_l : height_r) + 1;
-}
-
-node *small_right_rotate(node *p)
-{
-    node *q = p->left;
-    p->left = q->right;
-    q->right = p;
-    recount_height(p);
-    recount_height(q);
-    return q;
-}
-
-node *small_left_rotate(node *q)
-{
-
-    node *p = q->right;
-    q->right = p->left;
-    p->left = q;
-    recount_height(p);
-    recount_height(q);
-    return p;
-}
-
-node *balance(node *p)
-{
-    recount_height(p);
-    auto b = bfactor(p);
-    if (bfactor(p) == 2) //big left rotate
-    {
-        if (bfactor(p->right) > 0)
-        {
-            p->right = small_right_rotate(p->right);
-        }
-        return small_left_rotate(p);
-    }
-
-    if (bfactor(p) == -2) // big right rotate
-    {
-        if (bfactor(p->left) > 0)
-        {
-            p->left = small_left_rotate(p->left);
-        }
-        return small_right_rotate(p);
-    }
-    return p;
-}
-
-node* findmin(node *p)//minimal key in subtree
-{
-    return p->left ? findmin(p->left) : p;
-}
-
-node * removemin(node* p){
-    if (p->left==nullptr){
-        return p->right;
-    }
-    p->left = removemin(p->left);
-    balance(p);
-}
-
-node *insert(node *p, int key)
-{
-    if (p == nullptr)
-    {
-        return new node(key);
-    }
-    if (key >= p->key)
-    {
-        p->right = insert(p->right, key);
-    }
-    else
-    {
-        p->left = insert(p->left, key);
-    }
-    return balance(p);
-}
-
-node *remove(node *p, int key)
-{
-    if(p == nullptr){
-        return nullptr;
-    }
-    if (key < p->key)
-    {
-        p->left = remove(p->left, key);
-    }
-    else if (p->key < key)
-    {
-        p->right = remove(p->right, key);
-    }
-    else
-    {
-        node * left = p->left;
-        node* right = p->right;
-        delete p;
-
-        node* min_in_right = findmin(right);
-        min_in_right->right = removemin(right);
-        min_in_right->left = left;
-        return balance(min_in_right);
-    }
-}
-
-
 
 int main(int argc, char *argv[])
 {
-    node *tree = new node(25);
+    AvlTree<double> *tree = new AvlTree<double>(25);
     std::cerr << "1\n";
-    tree = insert(tree, 14);
+    tree = tree->insert(14);
     std::cerr << "2\n";
-    tree = insert(tree, 10);
-    tree = insert(tree,11);
+    tree = tree->insert(10);
+    tree = tree->insert(11);
     std::cerr << "3\n";
-    tree = remove(tree, 12);
+    tree = tree->remove(14);
+    tree = tree->insert(14);
+    tree = tree->insert(13);
+    tree = tree->insert(12);
     auto a = 67;
 }
