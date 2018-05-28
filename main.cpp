@@ -18,16 +18,16 @@ class AvlTree
         return 0;
     }
 
-    int bfactor(AvlTree *p)
+    int bfactor()
     {
-        return get_height(p->right) - get_height(p->left);
+        return get_height(right) - get_height(left);
     }
 
-    void recount_height()
+    void recount_height(AvlTree *p)
     {
-        auto height_l = get_height(left);
-        auto height_r = get_height(right);
-        height = (height_l > height_r ? height_l : height_r) + 1;
+        auto height_l = get_height(p->left);
+        auto height_r = get_height(p->right);
+        p->height = (height_l > height_r ? height_l : height_r) + 1;
     }
 
     AvlTree *small_right_rotate(AvlTree *p)
@@ -35,34 +35,36 @@ class AvlTree
         AvlTree *q = p->left;
         p->left = q->right;
         q->right = p;
-        p->recount_height();
-        q->recount_height();
+        recount_height(p);
+        recount_height(q);
         return q;
     }
 
     AvlTree *small_left_rotate(AvlTree *q)
     {
+
         AvlTree *p = q->right;
         q->right = p->left;
         p->left = q;
-        p->recount_height();
-        q->recount_height();
+        recount_height(q);
+        recount_height(p);
+
         return p;
     }
 
     AvlTree *balance()
     {
-        recount_height();
-        if (bfactor(this) == 2) //big left rotate
+        recount_height(this);
+        if (bfactor() == 2) //big left rotate
         {
-            if (bfactor(right) > 0)
+            if (right->bfactor() < 0)           
                 right = small_right_rotate(right);
             return small_left_rotate(this);
         }
 
-        if (bfactor(this) == -2) // big right rotate
+        if (bfactor() == -2) // big right rotate
         {
-            if (bfactor(left) > 0)
+            if (left->bfactor() > 0)
                 left = small_left_rotate(left);
             return small_right_rotate(this);
         }
@@ -97,7 +99,7 @@ class AvlTree
             return nullptr;
         if (key < this->key)
             left =left->remove(key);
-        else if (key > this->key)
+        else if (this->key < key)
             right = right->remove(key);
         else
         {
@@ -134,5 +136,6 @@ int main(int argc, char *argv[])
     tree = tree->insert(14);
     tree = tree->insert(13);
     tree = tree->insert(12);
+
     auto a = 67;
 }
