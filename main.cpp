@@ -23,11 +23,11 @@ class AvlTree
         return get_height(right) - get_height(left);
     }
 
-    void recount_height(AvlTree *p)
+    void recount_height()
     {
-        auto height_l = get_height(p->left);
-        auto height_r = get_height(p->right);
-        p->height = (height_l > height_r ? height_l : height_r) + 1;
+        auto height_l = get_height(left);
+        auto height_r = get_height(right);
+        height = (height_l > height_r2 ? height_l : height_r) + 1;
     }
 
     AvlTree *small_right_rotate(AvlTree *p)
@@ -35,8 +35,8 @@ class AvlTree
         AvlTree *q = p->left;
         p->left = q->right;
         q->right = p;
-        recount_height(p);
-        recount_height(q);
+        p->recount_height();
+        q->recount_height();
         return q;
     }
 
@@ -46,15 +46,15 @@ class AvlTree
         AvlTree *p = q->right;
         q->right = p->left;
         p->left = q;
-        recount_height(q);
-        recount_height(p);
+        q->recount_height();
+        p->recount_height();
 
         return p;
     }
 
     AvlTree *balance()
     {
-        recount_height(this);
+        recount_height();
         if (bfactor() == 2) //big left rotate
         {
             if (right->bfactor() < 0)           
